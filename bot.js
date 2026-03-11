@@ -1,5 +1,6 @@
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
+const express = require("express");
 
 const TOKEN = process.env.BOT_TOKEN;
 
@@ -7,28 +8,16 @@ const bot = new TelegramBot(TOKEN, { polling: true });
 
 let CHAT_ID = null;
 
-
-// khi người dùng gửi /start
 bot.onText(/\/start/, (msg) => {
   CHAT_ID = msg.chat.id;
-
-  bot.sendMessage(
-    CHAT_ID,
-    "🤖 Bot Yu-Gi-Oh đã hoạt động!\n\nGõ /card để nhận 1 lá bài."
-  );
-
-  console.log("Chat ID:", CHAT_ID);
+  bot.sendMessage(CHAT_ID, "🤖 Bot Yu-Gi-Oh đang chạy!");
 });
 
-
-// khi người dùng gửi /card
 bot.onText(/\/card/, (msg) => {
   CHAT_ID = msg.chat.id;
   sendRandomCard();
 });
 
-
-// lấy card random
 async function sendRandomCard() {
   if (!CHAT_ID) return;
 
@@ -47,19 +36,31 @@ Type: ${card.type}
 ${card.desc}
 `;
 
-    const image = card.card_images[0].image_url;
+    const image = card.card_images?.[0]?.image_url;
 
-    await bot.sendPhoto(CHAT_ID, image, {
-      caption: caption.substring(0, 1000) // tránh caption quá dài
-    });
+    if (image) {
+      await bot.sendPhoto(CHAT_ID, image, {
+        caption: caption.substring(0, 1000),
+      });
+    } else {
+      await bot.sendMessage(CHAT_ID, caption);
+    }
 
   } catch (err) {
-    console.log("Error:", err.message);
+    console.log(err);
   }
 }
 
-
-// gửi card mỗi 10 giây (test)
 setInterval(() => {
   sendRandomCard();
 }, 10000);
+
+
+// mở port cho Render
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("Bot is running");
+});
+
+app.listen(process.env.PORT || 3000);
