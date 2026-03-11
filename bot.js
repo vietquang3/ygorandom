@@ -1,23 +1,41 @@
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
-const cron = require("node-cron");
 
-const TOKEN = "8733031342:AAEtV36Uq0DKq8CsorABkFCpJ0NVDnMNW4g";
+const TOKEN = process.env.BOT_TOKEN;
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 
 let CHAT_ID = null;
 
-bot.on("message", (msg) => {
+
+// khi người dùng gửi /start
+bot.onText(/\/start/, (msg) => {
   CHAT_ID = msg.chat.id;
+
+  bot.sendMessage(
+    CHAT_ID,
+    "🤖 Bot Yu-Gi-Oh đã hoạt động!\n\nGõ /card để nhận 1 lá bài."
+  );
+
   console.log("Chat ID:", CHAT_ID);
 });
 
+
+// khi người dùng gửi /card
+bot.onText(/\/card/, (msg) => {
+  CHAT_ID = msg.chat.id;
+  sendRandomCard();
+});
+
+
+// lấy card random
 async function sendRandomCard() {
   if (!CHAT_ID) return;
 
   try {
-    const res = await axios.get("https://db.ygoprodeck.com/api/v7/randomcard.php");
+    const res = await axios.get(
+      "https://db.ygoprodeck.com/api/v7/randomcard.php"
+    );
 
     const card = res.data;
 
@@ -31,18 +49,17 @@ ${card.desc}
 
     const image = card.card_images[0].image_url;
 
-    bot.sendPhoto(CHAT_ID, image, { caption });
+    await bot.sendPhoto(CHAT_ID, image, {
+      caption: caption.substring(0, 1000) // tránh caption quá dài
+    });
 
   } catch (err) {
-    console.log(err);
+    console.log("Error:", err.message);
   }
 }
 
-// mỗi 1 tiếng
-cron.schedule("0 * * * *", () => {
-  sendRandomCard();
-});
 
-bot.onText(/\/card/, () => {
+// gửi card mỗi 10 giây (test)
+setInterval(() => {
   sendRandomCard();
-});
+}, 10000);
