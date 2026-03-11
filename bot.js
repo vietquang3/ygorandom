@@ -32,18 +32,20 @@ bot.onText(/\/card/, (msg) => {
 });
 
 async function sendRandomCard() {
+
   if (!CHAT_ID) return;
 
   try {
-    const response = await axios.get(
+
+    const res = await axios.get(
       "https://db.ygoprodeck.com/api/v7/randomcard.php"
     );
 
-    const card = response.data;
+    const card = res.data;
 
-    const name = card.name || "Unknown";
-    const type = card.type || "Unknown";
-    const desc = card.desc || "No description";
+    const name = card?.name || "Unknown card";
+    const type = card?.type || "Unknown type";
+    const desc = card?.desc || "No description available";
 
     const caption = `🃏 ${name}
 
@@ -51,7 +53,7 @@ Type: ${type}
 
 ${desc}`.substring(0, 1000);
 
-    const image = card.card_images?.[0]?.image_url;
+    const image = card?.card_images?.[0]?.image_url;
 
     if (image) {
       await bot.sendPhoto(CHAT_ID, image, { caption });
@@ -59,9 +61,12 @@ ${desc}`.substring(0, 1000);
       await bot.sendMessage(CHAT_ID, caption);
     }
 
-  } catch (error) {
-    console.log("API error:", error.message);
+  } catch (err) {
+
+    console.log("API error:", err.message);
+
   }
+
 }
 
 // gửi card mỗi 10 giây (test)
